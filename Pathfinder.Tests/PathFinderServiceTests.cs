@@ -13,8 +13,6 @@ namespace Pathfinder.Tests
             var testData = new int[] { 1, 2, 0, 3, 0, 2, 0 };
             var expected = new int[] { 1, 2, 3, 0 };
 
-
-
             IPathFinderService service = new PathFinderService();
             var result = service.FindPath(testData);
             CollectionAssert.AreEqual(expected, result);

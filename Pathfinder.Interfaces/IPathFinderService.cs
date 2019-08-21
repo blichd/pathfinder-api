@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pathfinder.Interfaces
+﻿namespace Pathfinder.Interfaces
 {
     public interface IPathFinderService
     {
