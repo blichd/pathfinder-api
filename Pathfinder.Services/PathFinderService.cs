@@ -1,6 +1,8 @@
-﻿using Pathfinder.Interfaces;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Pathfinder.Interfaces;
 using Pathfinder.Services.Helpers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,11 +10,25 @@ namespace Pathfinder.Services
 {
     public class PathFinderService : IPathFinderService
     {
+        private readonly IMemoryCache cache;
+
+        public PathFinderService(IMemoryCache cache)
+        {
+            this.cache = cache;
+        }
+
         public int[] FindPath(int[] input)
         {
             if (input == null || input.Length == 0)
             {
                 throw new ArgumentNullException();
+            }
+
+            var cacheKey = CalcHash(input);
+
+            if (cache.TryGetValue(cacheKey, out int[] value))
+            {
+                return value;
             }
 
             var tree = new Tree
@@ -22,19 +38,24 @@ namespace Pathfinder.Services
 
             var rootNode = new Node(0, input, null, tree);
 
-            if (!tree.FinalNodes.Any())
+            int[] result;
+            if (tree.FinalNodes.Any())
             {
-                return null;
-            }
-
-            var winner = tree.FinalNodes
+                result = tree.FinalNodes
                 .Select(s => GetPath(s).ToArray())
                 .OrderBy(o => o.Length)
                 .First()
                 .Reverse()
                 .ToArray();
+            }
+            else
+            {
+                result = new int[0];
+            }
 
-            return winner;
+            cache.Set(cacheKey, result);
+
+            return result;
         }
 
         private IEnumerable<int> GetPath(Node node)
@@ -50,6 +71,16 @@ namespace Pathfinder.Services
             {
                 yield return x;
             }
+        }
+
+        private int CalcHash(int[] data)
+        {
+            int hc = data.Length;
+            for (int i = 0; i < data.Length; ++i)
+            {
+                hc = unchecked(hc * 31 + data[i]);
+            }
+            return hc;
         }
     }
 }
